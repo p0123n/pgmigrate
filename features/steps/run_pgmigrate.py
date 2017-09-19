@@ -3,20 +3,23 @@ import subprocess
 import sys
 
 import yaml
-
 from behave import given, then, when
 
 
-def run_pgmigrate(migr_dir, args):
+def run_pgmigrate(migr_dir, args, user=None):
+
+    pgmigrate_cmd = './pgmigrate.py' if not user else f'runuser -l {user} ./pgmigrate -c '
+
     cmd = ['coverage', 'run', '-p', '--include=pgmigrate.py',
            './pgmigrate.py', '-vvv', '-d', migr_dir,
-           '-c', 'dbname=pgmigratetest'] + str(args).split(' ')
+           '-c', 'dbname=pgmigratetest user=postgres password=postgres host=postgres port=5432'] + str(args).split()
 
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
 
     stdout, stderr = p.communicate()
     return p.returncode, str(stdout), str(stderr)
+
 
 @given('successful pgmigrate run with "{args}"')
 def step_impl(context, args):
@@ -37,6 +40,16 @@ def step_impl(context, args):
         with open(os.path.join(context.migr_dir, 'migrations.yml'), 'w') as f:
             f.write(yaml.dump(context.migrate_config))
     res = run_pgmigrate(context.migr_dir, args)
+
+    context.last_migrate_res = {'ret': res[0], 'out': res[1], 'err': res[2]}
+
+
+@when('we run pgmigrate from {user} with "{args}"')  # noqa
+def step_impl(context, user, args):
+    if context.migrate_config:
+        with open(os.path.join(context.migr_dir, 'migrations.yml'), 'w') as f:
+            f.write(yaml.dump(context.migrate_config))
+    res = run_pgmigrate(context.migr_dir, args, user)
 
     context.last_migrate_res = {'ret': res[0], 'out': res[1], 'err': res[2]}
 

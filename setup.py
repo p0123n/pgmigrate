@@ -34,15 +34,17 @@ except ImportError:
 REQUIREMENTS = [
     'sqlparse >= 0.2.1',
     'psycopg2 >= 2.6.2',
-    'PyYAML >= 3.12'
-    ]
+    'PyYAML >= 3.12',
+    'pylint >= 1.7.0',
+    'coverage >= 4.4.0',
+]
 
 if sys.version_info < (3, 0):
     REQUIREMENTS.append('future >= 0.15.2')
 
 setup(
     name="yandex-pgmigrate",
-    version="1.0.2",
+    version="2017-09",
     description="PostgreSQL migrations made easy",
     license="PostgreSQL License",
     url="https://github.com/yandex/pgmigrate/",
