@@ -656,6 +656,7 @@ def get_config(base_dir, args=None):
     """
     Load configuration from yml in base dir with respect of args
     """
+    global MIGRATIONS_TABLE_NAME 
     base_dir = MIGRATION_FOLDER \
         if not base_dir or base_dir == "." \
         else base_dir
@@ -689,7 +690,8 @@ def get_config(base_dir, args=None):
     and by default it will be just `migrations`
     """
     table_name = "_".join(_config.replace(".yml", "").split("_")[:2])
-
+    MIGRATIONS_TABLE_NAME = table_name
+    
     path = os.path.join(base_dir, _config)
 
     try:
