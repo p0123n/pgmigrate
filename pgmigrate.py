@@ -293,10 +293,14 @@ def _init_schema(cursor):
     LOG.info('creating type schema_version_type')
     query = cursor.mogrify('CREATE TYPE public.schema_version_type '
                            'AS ENUM (%s, %s);', ('auto', 'manual'))
-    cursor.execute(query)
+    try:
+        cursor.execute(query)
+    except BaseException as e:
+        LOG.exception(e)  # type already exists
+    
     LOG.info(cursor.statusmessage)
     LOG.info(f'creating table {MIGRATIONS_TABLE_NAME}')
-    query = cursor.mogrify(f'CREATE TABLE public.{MIGRATIONS_TABLE_NAME} ('
+    query = cursor.mogrify(f'CREATE TABLE IF NOT EXISTS public.{MIGRATIONS_TABLE_NAME} ('
                            f'version BIGINT NOT NULL PRIMARY KEY, '
                            f'description TEXT NOT NULL, '
                            f'type public.schema_version_type NOT NULL '
