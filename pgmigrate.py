@@ -697,8 +697,6 @@ def get_config(base_dir, args=None):
     and by default it will be just `migrations`
     """
     table_name = "_".join(_config.replace(".yml", "").split("_")[:2])
-    MIGRATIONS_TABLE_NAME = table_name
-    
     path = os.path.join(base_dir, _config)
 
     try:
@@ -727,9 +725,14 @@ def get_config(base_dir, args=None):
 
     conf = conf._replace(conn_instance=_create_connection(conf.conn))
     conf = conf._replace(cursor=_init_cursor(conf.conn_instance, conf.session))
-    conf = conf._replace(table_name=table_name) \
-        if not base.get("table_name") \
-        else conf._replace(table_name=base.get("table_name").strip())
+
+    if not base.get("table_name"):
+        conf = conf._replace(table_name=table_name)
+        MIGRATIONS_TABLE_NAME = table_name
+    else:
+        conf._replace(table_name=base.get("table_name").strip())
+        MIGRATIONS_TABLE_NAME = base.get("table_name").strip()
+
     conf = conf._replace(callbacks=_get_callbacks(conf.callbacks,
                                                   conf.base_dir))
 
