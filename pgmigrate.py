@@ -291,12 +291,19 @@ def _init_schema(cursor):
     Create migrations table table
     """
     LOG.info('creating type schema_version_type')
-    query = cursor.mogrify('CREATE TYPE public.schema_version_type '
-                           'AS ENUM (%s, %s);', ('auto', 'manual'))
+    sql = """
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'schema_version_type') THEN
+            CREATE TYPE public.schema_version_type AS ENUM (%s, %s);
+        END IF;
+    END$$;
+    """
+    query = cursor.mogrify(sql, ('auto', 'manual'))
     cursor.execute(query)
     LOG.info(cursor.statusmessage)
     LOG.info(f'creating table {MIGRATIONS_TABLE_NAME}')
-    query = cursor.mogrify(f'CREATE TABLE public.{MIGRATIONS_TABLE_NAME} ('
+    query = cursor.mogrify(f'CREATE TABLE IF NOT EXISTS public.{MIGRATIONS_TABLE_NAME} ('
                            f'version BIGINT NOT NULL PRIMARY KEY, '
                            f'description TEXT NOT NULL, '
                            f'type public.schema_version_type NOT NULL '
@@ -718,7 +725,9 @@ def get_config(base_dir, args=None):
 
     conf = conf._replace(conn_instance=_create_connection(conf.conn))
     conf = conf._replace(cursor=_init_cursor(conf.conn_instance, conf.session))
-    conf = conf._replace(table_name=table_name)
+    conf = conf._replace(table_name=table_name) \
+        if not base.get("table_name") \
+        else conf._replace(table_name=base.get("table_name").strip())
     conf = conf._replace(callbacks=_get_callbacks(conf.callbacks,
                                                   conf.base_dir))
 
